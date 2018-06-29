@@ -7,6 +7,80 @@
 
 #include "interface/ntupleQCD.h"
 
+#include <iostream>
+using namespace std;
+
+struct Jets {
+
+    Jets(bool _isRec, bool _withStructure) : isRec(_isRec), withStructure(_withStructure) {}
+
+    std::vector<float> pt_, eta_, phi_, mass_,
+        massSoftDrop_, tau1_, tau2_, tau3_,
+        jetflavour_, btag_; 
+    bool isRec, withStructure;
+
+    void Reset()
+    {
+        pt_.clear();
+        eta_.clear();
+        phi_.clear();
+        mass_.clear();
+
+        massSoftDrop_.clear();
+        tau1_.clear();
+        tau2_.clear();
+        tau3_.clear();
+
+        jetflavour_.clear();
+        btag_.clear();
+    }
+
+
+    void InitBranches(TTree* myskim, string nameTag)
+    {
+        auto initOne =[&](string name, std::vector<float> *var) {
+            myskim->Branch((nameTag+name).c_str(), "vector<float>",  var);
+        };
+
+        initOne("jetPt"           , &pt_);
+        initOne("jetEta"          , &eta_);
+        initOne("jetPhi"          , &phi_);
+        initOne("jetMass"         , &mass_);
+
+        if(withStructure) {
+            initOne("jetMassSoftDrop" , &massSoftDrop_);
+            initOne("jetTau1"         , &tau1_);
+            initOne("jetTau2"         , &tau2_);
+            initOne("jetTau3"         , &tau3_);
+        }
+
+        initOne("jetFlavour"      , &jetflavour_);
+        if(isRec)
+            initOne("jetBtag"         , &btag_);  
+    }
+
+    void PushValues(d_ana::dBranchHandler<Jet> &jets)
+    {
+        for(size_t i=0;i<jets.size();i++){
+            pt_.push_back(jets.at(i)->PT);
+            eta_.push_back(jets.at(i)->Eta); 
+            phi_.push_back(jets.at(i)->Phi); 
+            mass_.push_back(jets.at(i)->Mass); 
+
+            if(withStructure) {
+                tau1_.push_back(jets.at(i)->Tau[0]);
+                tau2_.push_back(jets.at(i)->Tau[1]);
+                tau3_.push_back(jets.at(i)->Tau[2]);
+            }
+
+            jetflavour_.push_back(jets.at(i)->Flavor);
+            if(isRec)
+                btag_.push_back(jets.at(i)->BTag);
+        }
+    }
+
+};
+
 
 
 void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */){
@@ -35,21 +109,27 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
 	 * is used to run directly in Delphes output.
 	 * For skimmed ntuples, see below
 	 */
-	d_ana::dBranchHandler<Electron> elecs(tree(),"Electron");
+
+	//d_ana::dBranchHandler<Electron> elecs(tree(),"Electron");
+
 	/*
 	 * Other branches might be the following
 	 * (for a full list, please inspect the Delphes sample root file with root)
 	 * For the Delphes class description, see $DELPHES_PATH/classes/DelphesClasses.h
 	 */
 	//
-	d_ana::dBranchHandler<HepMCEvent>  event(tree(),"Event");
-	d_ana::dBranchHandler<GenParticle> genpart(tree(),"Particle");
+	//d_ana::dBranchHandler<HepMCEvent>  event(tree(),"Event");
+	//d_ana::dBranchHandler<GenParticle> genpart(tree(),"Particle");
 	d_ana::dBranchHandler<Jet>         genjet(tree(),"GenJet");
 	d_ana::dBranchHandler<Jet>         jet(tree(),"Jet");
-	d_ana::dBranchHandler<Muon>        muontight(tree(),"MuonTight");
-	d_ana::dBranchHandler<Muon>        muonloose(tree(),"MuonLoose");
+
+	d_ana::dBranchHandler<Jet>         genjetAK8(tree(),"GenJetAK8");
+	d_ana::dBranchHandler<Jet>         jetAK8(tree(),"JetAK8");
+
+	//d_ana::dBranchHandler<Muon>        muontight(tree(),"MuonTight");
+	//d_ana::dBranchHandler<Muon>        muonloose(tree(),"MuonLoose");
 	//d_ana::dBranchHandler<Photon>      photon(tree(),"Photon");
-	d_ana::dBranchHandler<MissingET>   met(tree(),"MissingET");
+	//d_ana::dBranchHandler<MissingET>   met(tree(),"MissingET");
 
 
 	/* ==SKIM==
@@ -86,59 +166,25 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
 	/*
 	 * Add a simple branch to the skim
 	 */
-	std::vector<float> elecPt; 	std::vector<float> elecPhi; 	std::vector<float> elecEta; 
-	std::vector<float> muonPt; 	std::vector<float> muonPhi; 	std::vector<float> muonEta; 
-	myskim->Branch("elecPt","vector<float>" ,&elecPt);
-	myskim->Branch("elecEta","vector<float>" ,&elecEta);
-	myskim->Branch("elecPhi","vector<float>" ,&elecPhi);
-
-	myskim->Branch("muonPt","vector<float>" ,&muonPt);
-	myskim->Branch("muonEta","vector<float>" ,&muonEta);
-	myskim->Branch("muonPhi","vector<float>" ,&muonPhi);
+    /*
+    */
 
 	//jets
 
-        std::vector<float> pt_;         std::vector<float> btag_ ;         std::vector<float> eta_;           std::vector<float> phi_;         std::vector<float> mass_;          std::vector<float> massSoftDrop_;    std::vector<float> jetflavour_ ;
-	std::vector<float> tau1_;       std::vector<float> tau2_;          std::vector<float> tau3_; 
+    Jets recJets(true, false),    genJets(false, false);
+    Jets recJetsAK8(true, true), genJetsAK8(false, true);
 
-	myskim->Branch("jetPt"                ,"vector<float>"     ,&pt_);
-	myskim->Branch("jetBtag"              ,"vector<float>"     ,&btag_);  
-	myskim->Branch("jetEta"               ,"vector<float>"     ,&eta_);
-	myskim->Branch("jetPhi"               ,"vector<float>"     ,&phi_);
-	myskim->Branch("jetMass"              ,"vector<float>"     ,&mass_);
-	myskim->Branch("jetMassSoftDrop"      ,"vector<float>"     ,&massSoftDrop_);
-	myskim->Branch("jetTau1"              ,"vector<float>"     ,&tau1_);
-	myskim->Branch("jetTau2"              ,"vector<float>"     ,&tau2_);
-	myskim->Branch("jetTau3" ,"vector<float>" ,&tau3_);
-	myskim->Branch("jetFlavorHadron" ,"vector<float>" ,&jetflavour_);
+    recJets.InitBranches(myskim, "");
+    genJets.InitBranches(myskim, "gen");
 
-	//gen jets
-
-	std::vector<float> genjetpt_;         std::vector<float> genjetflavour_ ;         std::vector<float> genjeteta_;           std::vector<float> genjetphi_;         std::vector<float> genjetmass_;          std::vector<float> genjetmassSoftDrop_;    
-	std::vector<float> genjettau1_;       std::vector<float> genjettau2_;          std::vector<float> genjettau3_; 
-
-	
-	myskim->Branch("genjetPt"                ,"vector<float>"     ,&genjetpt_);
-	myskim->Branch("genjetFlavour"              ,"vector<float>"     ,&genjetflavour_);  
-	myskim->Branch("genjetEta"               ,"vector<float>"     ,&genjeteta_);
-	myskim->Branch("genjetPhi"               ,"vector<float>"     ,&genjetphi_);
-	myskim->Branch("genjetMass"              ,"vector<float>"     ,&genjetmass_);
-	myskim->Branch("genjetMassSoftDrop"      ,"vector<float>"     ,&genjetmassSoftDrop_);
-	myskim->Branch("genjetTau1"              ,"vector<float>"     ,&genjettau1_);
-	myskim->Branch("genjetTau2"              ,"vector<float>"     ,&genjettau2_);
-	myskim->Branch("genjetTau3" ,"vector<float>" ,&genjettau3_);
-	
-	/*
-	 * Or store a vector of objects (also possible to store only one object)
-	 */
-	//std::vector<Electron> skimmedelecs; //commented PG
-	//myskim->Branch("Electrons",&skimmedelecs); //commented PG
+    recJetsAK8.InitBranches(myskim, "AK8");
+    genJetsAK8.InitBranches(myskim, "AK8gen");
 
 
 	size_t nevents=tree()->entries();
 	if(isTestMode())
 		nevents/=100;
-	for(size_t eventno=0;eventno<nevents;eventno++){
+	for(size_t eventno=0;eventno<nevents;eventno++) {
 	  /*
 	   * The following two lines report the status and set the event link
 	   * Do not remove!
@@ -146,70 +192,17 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
 	  reportStatus(eventno,nevents);
 	  tree()->setEntry(eventno);
 
-	  /*
-	   * Begin the event-by-event analysis
-	   */
-	  //commented by PG
-	  //for(size_t i=0;i<elecs.size();i++){
-	    //histo->Fill(elecs.at(i)->PT);
-	  //}
-
-	  /*
-	   * Or to fill the skim
-	   */
-	  //skimmedelecs.clear(); //commented by PG
-	  for(size_t i=0;i<elecs.size();i++){
-	    //flat info
-	    //added by PG
-	    elecPt.push_back(elecs.at(i)->PT);
-	    elecEta.push_back(elecs.at(i)->Eta); 
-	    elecPhi.push_back(elecs.at(i)->Phi); 
-	    //if(elecs.at(i)->PT < 20) continue;
-	    //or objects
-	    //skimmedelecs.push_back(*elecs.at(i)); //commented by PG
-	  }
-
-	  for(size_t i=0;i<muontight.size();i++){
-	    //flat info
-	    //added by PG
-	    muonPt.push_back(muontight.at(i)->PT);
-	    muonEta.push_back(muontight.at(i)->Eta); 
-	    muonPhi.push_back(muontight.at(i)->Phi); 
-	  }
-
-	  for(size_t i=0;i<jet.size();i++){
-	    //flat info
-	    //added by PG
-	    pt_.push_back(jet.at(i)->PT);
-	    eta_.push_back(jet.at(i)->Eta); 
-	    phi_.push_back(jet.at(i)->Phi); 
-	    mass_.push_back(jet.at(i)->Mass); 
-	    jetflavour_.push_back(jet.at(i)->Flavor);
-	    btag_.push_back(jet.at(i)->BTag);
-	  }
-
-	  for(size_t i=0;i<genjet.size();i++){
-	    //flat info
-	    //added by PG
-	    genjetpt_.push_back(genjet.at(i)->PT);
-	    genjeteta_.push_back(genjet.at(i)->Eta); 
-	    genjetphi_.push_back(genjet.at(i)->Phi); 
-	    genjetmass_.push_back(genjet.at(i)->Mass);
-	    genjetflavour_.push_back(genjet.at(i)->Flavor);
-	    
-	  }
+      recJets.PushValues(jet);
+      genJets.PushValues(genjet);
+      recJetsAK8.PushValues(jetAK8);
+      genJetsAK8.PushValues(genjetAK8);
 
 	  myskim->Fill();
-      //std::cout << "I am filling" << std::endl;
+      recJets.Reset();
+      genJets.Reset();
+      recJetsAK8.Reset();
+      genJetsAK8.Reset();
 
-	  
-	  /*==SKIM==
-	   * Access the branches of the skim
-	   */
-	  //std::vector<Electron> * skimelecs=electrons.content();
-	  //for(size_t i=0;i<skimelecs->size();i++){
-	  //	histo->Fill(skimelecs->at(i).PT);
-	  //}
 	}
 
 	

@@ -39,7 +39,7 @@ $ different input file.
 
 $ This Samplesdir can be a local directory or refer to off-site locations via xrootd 
     
-    Samplesdir = root://cmseos.fnal.gov//store/user/snowmass/noreplica/YR_Delphes/Delphes342pre15/QCD_Pt-300to470_TuneCUETP8M1_14TeV_pythia8_200PU
+    Samplesdir = /pnfs/desy.de/cms/tier2/store/group/upgrade/delphes_output/YR_Delphes/Delphes342pre15_hadd/QCD_Pt-50to80_TuneCUETP8M1_14TeV_pythia8_200PU/
 
 $   QCD_Pt-120to170_TuneCUETP8M1_14TeV_pythia8_200PU
 $ The analyser will have a postProcess() function. This function should be used to
@@ -75,7 +75,7 @@ $    this can be indicated here and later checked in the loop.
 $ 8) Optional other options (not used for now)
 
 
-   QCD_Pt-300to470_TuneCUETP8M1_14TeV_pythia8_100_0.root, example,       630, 23, 42, 1, true
+   QCD_Pt-50to80_TuneCUETP8M1_14TeV_pythia8_200PU_1.root, example,       630, 23, 42, 1, true
    
 $ The last entry is an example for running over all input files in a directory
 
