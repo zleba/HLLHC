@@ -75,7 +75,7 @@ $    this can be indicated here and later checked in the loop.
 $ 8) Optional other options (not used for now)
 
 
-   QCD_Pt-50to80_TuneCUETP8M1_14TeV_pythia8_200PU_1.root, example,       630, 23, 42, 1, true
+   QCD_Pt-50to80_TuneCUETP8M1_14TeV_pythia8_200PU_1.root, example,       630, 23, auto, 1, true
    
 $ The last entry is an example for running over all input files in a directory
 
