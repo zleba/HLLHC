@@ -30,7 +30,7 @@ $ If the testmode is activated, only a fraction of the events will be processed.
 $ This mode is meant to test histogram ranges etc. The scaling does not necessarily
 $ correspond to the relative cross sections of the processes
     
-    Testmode   = false
+    Testmode   = true
 
 $ Maximum number of child processes that are spawned simultaneously, each running on a
 $ different input file.

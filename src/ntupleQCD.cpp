@@ -8,6 +8,13 @@
 #include "interface/ntupleQCD.h"
 
 #include <iostream>
+
+//#include "Math/PtEtaPhiM4D.h"
+//typedef ROOT::Math::PtEtaPhiM4D<float> FourVector;
+
+#include "TString.h"
+#define SF TString::Format
+
 using namespace std;
 
 struct Jets {
@@ -15,8 +22,10 @@ struct Jets {
     Jets(bool _isRec, bool _withStructure) : isRec(_isRec), withStructure(_withStructure) {}
 
     std::vector<float> pt_, eta_, phi_, mass_,
-        massSoftDrop_, tau1_, tau2_, tau3_,
+        tau1_, tau2_, tau3_,
+        ptSD_[2], etaSD_[2], phiSD_[2], massSD_[2],
         jetflavour_, btag_; 
+    //std::vector<TLorentzVector> p4;
     bool isRec, withStructure;
 
     void Reset()
@@ -25,12 +34,17 @@ struct Jets {
         eta_.clear();
         phi_.clear();
         mass_.clear();
+        //p4.clear();
 
-        massSoftDrop_.clear();
         tau1_.clear();
         tau2_.clear();
         tau3_.clear();
-
+        for(int i = 0; i < 2; ++i) {
+            ptSD_[i].clear();
+            etaSD_[i].clear();
+            phiSD_[i].clear();
+            massSD_[i].clear();
+        }
         jetflavour_.clear();
         btag_.clear();
     }
@@ -47,11 +61,19 @@ struct Jets {
         initOne("jetPhi"          , &phi_);
         initOne("jetMass"         , &mass_);
 
+        //myskim->Branch((nameTag+"p4").c_str(), &p4);
+
         if(withStructure) {
-            initOne("jetMassSoftDrop" , &massSoftDrop_);
             initOne("jetTau1"         , &tau1_);
             initOne("jetTau2"         , &tau2_);
             initOne("jetTau3"         , &tau3_);
+
+            for(int i = 0; i < 2; ++i) {
+                initOne(SF("jetSD%dPt"  ,i+1).Data() , &ptSD_[i]);
+                initOne(SF("jetSD%dEta" ,i+1).Data() , &etaSD_[i]);
+                initOne(SF("jetSD%dPhi" ,i+1).Data() , &phiSD_[i]);
+                initOne(SF("jetSD%dMass",i+1).Data() , &massSD_[i]);
+            }
         }
 
         initOne("jetFlavour"      , &jetflavour_);
@@ -67,10 +89,29 @@ struct Jets {
             phi_.push_back(jets.at(i)->Phi); 
             mass_.push_back(jets.at(i)->Mass); 
 
+            //p4.push_back(TLorentzVector(jets.at(i)->PT, jets.at(i)->Eta, jets.at(i)->Phi,jets.at(i)->Mass));
+
             if(withStructure) {
                 tau1_.push_back(jets.at(i)->Tau[0]);
                 tau2_.push_back(jets.at(i)->Tau[1]);
                 tau3_.push_back(jets.at(i)->Tau[2]);
+
+                for(int k = 0; k < 2; ++k) {
+                    double Pt=0, Eta=0, Phi=0, M=0; //Dummy values
+                    if(k < jets.at(i)->NSubJetsSoftDropped) {
+                        Pt  = jets.at(i)->SoftDroppedP4[k].Pt();
+                        Eta = jets.at(i)->SoftDroppedP4[k].Eta();
+                        Phi = jets.at(i)->SoftDroppedP4[k].Phi();
+                        M   = jets.at(i)->SoftDroppedP4[k].M();
+                    }
+                    ptSD_[k].push_back(Pt);
+                    etaSD_[k].push_back(Eta);
+                    phiSD_[k].push_back(Phi);
+                    massSD_[k].push_back(M);
+                }
+
+                //for(int k = 0; k < jets.at(i)->NSubJetsSoftDropped; ++k)
+                    //cout <<"Jets " << i <<" "<< k << " : "<<  jets.at(i)->SoftDroppedP4[k].Pt() << endl;
             }
 
             jetflavour_.push_back(jets.at(i)->Flavor);
@@ -118,7 +159,7 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
 	 * For the Delphes class description, see $DELPHES_PATH/classes/DelphesClasses.h
 	 */
 	//
-	//d_ana::dBranchHandler<HepMCEvent>  event(tree(),"Event");
+	d_ana::dBranchHandler<HepMCEvent>  event(tree(),"Event");
 	//d_ana::dBranchHandler<GenParticle> genpart(tree(),"Particle");
 	d_ana::dBranchHandler<Jet>         genjet(tree(),"GenJet");
 	d_ana::dBranchHandler<Jet>         jet(tree(),"Jet");
@@ -129,7 +170,9 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
 	//d_ana::dBranchHandler<Muon>        muontight(tree(),"MuonTight");
 	//d_ana::dBranchHandler<Muon>        muonloose(tree(),"MuonLoose");
 	//d_ana::dBranchHandler<Photon>      photon(tree(),"Photon");
-	//d_ana::dBranchHandler<MissingET>   met(tree(),"MissingET");
+	d_ana::dBranchHandler<MissingET>   met(tree(),"MissingET");
+	d_ana::dBranchHandler<ScalarHT>    scalarHT(tree(),"ScalarHT");
+	d_ana::dBranchHandler<Vertex>      vertex(tree(),"Vertex");
 
 
 	/* ==SKIM==
@@ -169,6 +212,22 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
     /*
     */
 
+    float weight, scale;
+    int processID;
+
+    myskim->Branch("weight",      &weight   ,  "weight/F"   );
+    myskim->Branch("scale",       &scale    ,  "scale/F"    );
+    myskim->Branch("processID",   &processID,  "processID/I");
+
+    float metEt, metPhi, sumHT;
+    myskim->Branch("metEt",   &metEt,  "metEt/F");
+    myskim->Branch("metPhi",  &metPhi, "metPhi/F");
+    myskim->Branch("sumHT",   &sumHT,  "sumHT/F");
+
+    int nVtx;
+    myskim->Branch("nVtx",   &nVtx,   "nVtx/I");
+
+
 	//jets
 
     Jets recJets(true, false),    genJets(false, false);
@@ -196,6 +255,20 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
       genJets.PushValues(genjet);
       recJetsAK8.PushValues(jetAK8);
       genJetsAK8.PushValues(genjetAK8);
+
+      weight = event.at(0)->Weight;
+      scale = event.at(0)->Scale;
+      processID = event.at(0)->ProcessID;
+      //cout << scale <<" "<< weight<<" "<< processID<< endl;
+
+      metEt  = met.at(0)->MET;
+      metPhi = met.at(0)->Phi;
+      sumHT  = scalarHT.at(0)->HT;
+
+      nVtx = vertex.size();
+      //cout << nVtx << endl;
+      //cout << metEt <<" "<< metPhi << " "<< sumHT  << endl;
+
 
 	  myskim->Fill();
       recJets.Reset();
