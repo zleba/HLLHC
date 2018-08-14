@@ -1,6 +1,8 @@
-fileDir=/nfs/dust/cms/user/zlebcr/hlLHC/desyFiles
+fileDir=/nfs/dust/cms/user/zlebcr/hlLHC/cernFiles
 
-names=`ls -d $fileDir/QCD_Pt-* | grep -o "\-[^_]*" | sed 's/-//' | sort -u`
+names=`ls -d $fileDir/TT* | grep -o "\-[^_]*" | sed 's/-//' | sort -u`
+echo $names
+#exit
 
 for n in $names
 do

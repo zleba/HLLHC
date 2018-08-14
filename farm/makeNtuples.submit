@@ -1,6 +1,6 @@
 ldPath = $ENV(LD_LIBRARY_PATH)
 
-nJobs = 99
+nJobs = 266
 
 getenv              = True
 environment         = "LD_LIBRARY_PATH_stored=$(ldPath)"
@@ -36,7 +36,7 @@ queue $(nJobs)
 # if not set, default is 3 hours
 # longer requested job run times get more hit in the fairshare calculation
 #
-+RequestRuntime     = 2400
++RequestRuntime     = 24000
 #
 #
 ##########################

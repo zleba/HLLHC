@@ -162,10 +162,10 @@ void ntupleQCD::analyze(size_t childid /* this info can be used for printouts */
 	d_ana::dBranchHandler<HepMCEvent>  event(tree(),"Event");
 	//d_ana::dBranchHandler<GenParticle> genpart(tree(),"Particle");
 	d_ana::dBranchHandler<Jet>         genjet(tree(),"GenJet");
-	d_ana::dBranchHandler<Jet>         jet(tree(),"Jet");
+	d_ana::dBranchHandler<Jet>         jet(tree(),"JetPUPPI");
 
 	d_ana::dBranchHandler<Jet>         genjetAK8(tree(),"GenJetAK8");
-	d_ana::dBranchHandler<Jet>         jetAK8(tree(),"JetAK8");
+	d_ana::dBranchHandler<Jet>         jetAK8(tree(),"JetPUPPIAK8");
 
 	//d_ana::dBranchHandler<Muon>        muontight(tree(),"MuonTight");
 	//d_ana::dBranchHandler<Muon>        muonloose(tree(),"MuonLoose");
