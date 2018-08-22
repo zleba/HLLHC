@@ -39,7 +39,7 @@ struct Jets {
         tau1_.clear();
         tau2_.clear();
         tau3_.clear();
-        for(int i = 0; i < 2; ++i) {
+        for(int i = 0; i < 3; ++i) {
             ptSD_[i].clear();
             etaSD_[i].clear();
             phiSD_[i].clear();
@@ -68,7 +68,7 @@ struct Jets {
             initOne("jetTau2"         , &tau2_);
             initOne("jetTau3"         , &tau3_);
 
-            for(int i = 0; i < 2; ++i) {
+            for(int i = 0; i < 3; ++i) {
                 initOne(SF("jetSD%dPt"  ,i+1).Data() , &ptSD_[i]);
                 initOne(SF("jetSD%dEta" ,i+1).Data() , &etaSD_[i]);
                 initOne(SF("jetSD%dPhi" ,i+1).Data() , &phiSD_[i]);
@@ -96,14 +96,14 @@ struct Jets {
                 tau2_.push_back(jets.at(i)->Tau[1]);
                 tau3_.push_back(jets.at(i)->Tau[2]);
 
-                for(int k = 0; k < 2; ++k) {
+                for(int k = 0; k < 3; ++k) {
                     double Pt=0, Eta=0, Phi=0, M=0; //Dummy values
-                    if(k < jets.at(i)->NSubJetsSoftDropped) {
+                   // if(k < jets.at(i)->NSubJetsSoftDropped) {
                         Pt  = jets.at(i)->SoftDroppedP4[k].Pt();
                         Eta = jets.at(i)->SoftDroppedP4[k].Eta();
                         Phi = jets.at(i)->SoftDroppedP4[k].Phi();
                         M   = jets.at(i)->SoftDroppedP4[k].M();
-                    }
+                    //}
                     ptSD_[k].push_back(Pt);
                     etaSD_[k].push_back(Eta);
                     phiSD_[k].push_back(Phi);
