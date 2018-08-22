@@ -23,7 +23,7 @@ struct Jets {
 
     std::vector<float> pt_, eta_, phi_, mass_,
         tau1_, tau2_, tau3_,
-        ptSD_[2], etaSD_[2], phiSD_[2], massSD_[2],
+        ptSD_[3], etaSD_[3], phiSD_[3], massSD_[3],
         jetflavour_, btag_; 
     //std::vector<TLorentzVector> p4;
     bool isRec, withStructure;
